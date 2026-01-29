@@ -58,4 +58,4 @@ This project is a Polymarket Copy Trading Bot that allows users to automatically
 Contributions are welcome! Please open an issue or submit a pull request. And if you are interested in this project, please consider giving it a star✨.
 
 ## Contact
-For updated version or any questions, please contact me at [Telegram](https://t.me/trust4120).
+For updated version or any questions, please contact me at [Telegram](https://t.me/OnChainMee).

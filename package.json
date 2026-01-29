@@ -11,11 +11,19 @@
         "format": "prettier --write .",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "keywords": [],
+    "keywords": [
+        "polymarket",
+        "copy-trading",
+        "trading-bot",
+        "prediction-markets",
+        "typescript",
+        "polygon",
+        "automated-trading"
+    ],
     "author": "",
     "license": "ISC",
     "type": "commonjs",
-    "description": "",
+    "description": "Automated Polymarket copy-trading bot that mirrors a chosen trader's prediction market orders in real time.",
     "devDependencies": {
         "@eslint/js": "^9.19.0",
         "@types/jest": "^29.5.14",
