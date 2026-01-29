@@ -1,7 +1,6 @@
-import moment from 'moment';
 import { ENV } from '../config/env';
-import { UserActivityInterface, UserPositionInterface } from '../interfaces/User';
-import { getUserActivityModel, getUserPositionModel } from '../models/userHistory';
+import { UserActivityInterface } from '../interfaces/User';
+import { getUserActivityModel } from '../models/userHistory';
 import fetchData from '../utils/fetchData';
 
 const USER_ADDRESS = ENV.USER_ADDRESS;
@@ -13,7 +12,6 @@ if (!USER_ADDRESS) {
 }
 
 const UserActivity = getUserActivityModel(USER_ADDRESS);
-const UserPosition = getUserPositionModel(USER_ADDRESS);
 
 let temp_trades: UserActivityInterface[] = [];
 
@@ -22,12 +20,32 @@ const init = async () => {
 };
 
 const fetchTradeData = async () => {
-
+    const nowSec = Math.floor(Date.now() / 1000);
+    const cutoffSec = nowSec - TOO_OLD_TIMESTAMP * 3600;
+    const url = `https://data-api.polymarket.com/activity?user=${USER_ADDRESS}&type=TRADE&limit=100&start=${cutoffSec}&end=${nowSec}&sortBy=TIMESTAMP&sortDirection=DESC`;
+    try {
+        const activities: UserActivityInterface[] = await fetchData(url);
+        for (const activity of activities) {
+            const existing = await UserActivity.findOne({
+                transactionHash: activity.transactionHash,
+                asset: activity.asset,
+                timestamp: activity.timestamp,
+            }).exec();
+            if (!existing) {
+                await UserActivity.create({
+                    ...activity,
+                    bot: false,
+                });
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching trade data:', err);
+    }
 };
 
 const tradeMonitor = async () => {
     console.log('Trade Monitor is running every', FETCH_INTERVAL, 'seconds');
-    await init();    //Load my oders before sever downs
+    await init();    // Load my orders before server downs
     while (true) {
         await fetchTradeData();     //Fetch all user activities
         await new Promise((resolve) => setTimeout(resolve, FETCH_INTERVAL * 1000));     //Fetch user activities every second

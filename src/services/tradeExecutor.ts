@@ -18,7 +18,16 @@ const UserActivity = getUserActivityModel(USER_ADDRESS);
 const readTempTrade = async () => {
     temp_trades = (
         await UserActivity.find({
-            $and: [{ type: 'TRADE' }, { bot: false }, { botExcutedTime: { $lt: RETRY_LIMIT } }],
+            $and: [
+                { type: 'TRADE' },
+                { bot: false },
+                {
+                    $or: [
+                        { botExcutedTime: { $exists: false } },
+                        { botExcutedTime: { $lt: RETRY_LIMIT } },
+                    ],
+                },
+            ],
         }).exec()
     ).map((trade) => trade as UserActivityInterface);
 };
@@ -26,7 +35,6 @@ const readTempTrade = async () => {
 const doTrading = async (clobClient: ClobClient) => {
     for (const trade of temp_trades) {
         console.log('Trade to copy:', trade);
-        // const market = await clobClient.getMarket(trade.conditionId);
         const my_positions: UserPositionInterface[] = await fetchData(
             `https://data-api.polymarket.com/positions?user=${PROXY_WALLET}`
         );
@@ -43,10 +51,28 @@ const doTrading = async (clobClient: ClobClient) => {
         const user_balance = await getMyBalance(USER_ADDRESS);
         console.log('My current balance:', my_balance);
         console.log('User current balance:', user_balance);
+
+        const condition =
+            trade.type === 'MERGE'
+                ? 'merge'
+                : trade.side === 'BUY'
+                  ? 'buy'
+                  : trade.side === 'SELL'
+                    ? 'sell'
+                    : 'merge';
+        await postOrder(
+            clobClient,
+            condition,
+            my_position,
+            user_position,
+            trade,
+            my_balance,
+            user_balance
+        );
     }
 };
 
-const tradeExcutor = async (clobClient: ClobClient) => {
+const tradeExecutor = async (clobClient: ClobClient) => {
     console.log(`Executing Copy Trading`);
 
     while (true) {
@@ -61,4 +87,4 @@ const tradeExcutor = async (clobClient: ClobClient) => {
     }
 };
 
-export default tradeExcutor;
+export default tradeExecutor;
