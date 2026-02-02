@@ -1,21 +1,51 @@
-dist
-node_modules
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# environmental
+# Dependency directories
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# TypeScript files
+*.tsbuildinfo
+
+# Environment variables
 .env
 
-# wallets and keys
-wallets.txt
-keypairs/
-keypairBackup/
-walletBackup/
-*.json
-!package.json
-!package-lock.json
+# Temporary files
+*.tmp
+*.temp
 
-# config with sensitive data
-config.json
+# Editor and OS-specific files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
 
-# logs
-logs.txt
-*.log
+# Optional lock files (keep package-lock.json for CI/CD)
+yarn.lock
+pnpm-lock.yaml
+
+# Coverage reports
+coverage/
+
+# Testing
+jest-test-results.json
+.nyc_output/
+.vitest/
+
+# Lint and formatting cache
+.eslintcache
+.prettiercache
+
+.yarn
+simulation_results
+trader_data_cache

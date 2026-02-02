@@ -1,205 +1,142 @@
 # Polymarket Copy Trading Bot
 
-**Copy any Polymarket trader automatically.** This bot monitors a chosen wallet and mirrors their prediction market orders on your wallet in real time.
+> Automated copy trading bot for Polymarket that mirrors trades from top performers with intelligent position sizing and real-time execution.
 
-## Table of Contents
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 
-- [What You Get](#what-you-get)
-- [What's New in Version 2](#whats-new-in-version-2)
-- [Key Features (This Version)](#key-features-this-version)
-- [How It Works](#how-it-works)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Geographic Restrictions](#geographic-restrictions)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+## Overview
 
----
+The Polymarket Copy Trading Bot automatically replicates trades from successful Polymarket traders to your wallet. It monitors trader activity 24/7, calculates proportional position sizes based on your capital, and executes matching orders in real-time.
 
-## What You Get
+### How It Works
+<img width="1007" height="690" alt="download" src="https://github.com/user-attachments/assets/a8d227c7-b25c-4f11-a48f-adef21bbb4db" />
 
-- **One trader, one config** — Set the wallet you want to copy; the bot does the rest.
-- **Real-time monitoring** — Polls Polymarket for the target’s activity at an interval you choose (default 1 second).
-- **Automated execution** — New trades are detected, then placed on your wallet via the official CLOB.
-- **Persistence & retries** — MongoDB stores activity and pending trades; failed copies are retried up to a limit you set.
-- **Full control** — Adjust poll interval, order age cutoff, and retry count via environment variables.
+1. **Select Traders** - Choose top performers from [Polymarket leaderboard](https://polymarket.com/leaderboard) or [Predictfolio](https://predictfolio.com)
+2. **Monitor Activity** - Bot continuously watches for new positions opened by selected traders using Polymarket Data API
+3. **Calculate Size** - Automatically scales trades based on your balance vs. trader's balance
+4. **Execute Orders** - Places matching orders on Polymarket using your wallet
+5. **Track Performance** - Maintains complete trade history in MongoDB
 
----
+## Quick Start
 
-## What's New in Version 2
+### Prerequisites
 
-Version 2 is a step up from a basic copy-trading script. Here’s what’s **advanced and added** in this release.
+- Node.js v18+
+- MongoDB database ([MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) free tier works)
+- Polygon wallet with USDC and POL/MATIC for gas
+- RPC endpoint ([Infura](https://infura.io) or [Alchemy](https://www.alchemy.com) free tier)
 
-### Core principle
-
-The bot runs on a simple loop:
-
-| Step | What it does |
-|------|----------------|
-| **Monitor** | Scans the target wallet’s activity every `FETCH_INTERVAL` seconds (default 1 s). |
-| **Analyze** | Compares the target’s positions with yours and finds trades to copy. |
-| **Execute** | Places buy/sell orders on your wallet to mirror the target’s positions. |
-| **Persist** | Saves activity and pending trades in MongoDB so the bot can resume and retry. |
-
-### Advanced features added in Version 2
-
-| Feature | Description |
-|--------|-------------|
-| **Real-time trade monitoring** | Continuously polls Polymarket for the target’s activity and keeps MongoDB in sync so you don’t miss trades after a restart. |
-| **Automated trade execution** | Reads pending trades from MongoDB, compares positions and balances, then places orders on your wallet via the official CLOB client. |
-| **MongoDB integration** | Stores user activities and positions per wallet. Enables resume-after-restart and a clear history of what was copied. |
-| **Retry logic** | Failed executions (e.g. network errors) are retried up to `RETRY_LIMIT` times so temporary issues don’t drop trades. |
-| **Order age filter** | Ignores trades older than `TOO_OLD_TIMESTAMP` (hours) so you only copy recent, relevant orders. |
-| **Configurable timing** | `FETCH_INTERVAL` (seconds) lets you balance speed vs API load; default is 1 second for near real-time copying. |
-| **Official CLOB client** | Uses `@polymarket/clob-client` for signing and submitting orders correctly on Polymarket. |
-| **Balance & position checks** | Before placing orders, the bot checks your USDC balance and compares your positions to the target’s so execution is consistent. |
-
-### What this version is
-
-- **Single target** — Copy one wallet at a time (one `USER_ADDRESS`).
-- **Standard wallet** — Uses your own wallet and private key (e.g. MetaMask/Phantom); no multi-sig or Safe wallet in this version.
-- **Simple config** — No RPC rotation, blacklist, or auto-redemption in v2; those may appear in later versions.
-
-Start small, monitor your positions, and keep your private key secure.
-
----
-
-## Key Features (This Version)
-
-| Feature | What it does |
-|--------|----------------|
-| **Trade monitor** | Fetches the target wallet’s activity on a timer, keeps your MongoDB in sync so you don’t miss trades after restarts. |
-| **Trade executor** | Reads pending trades from MongoDB, compares your positions vs the target’s, checks balances, and places orders on your wallet. |
-| **MongoDB history** | Stores activities and positions per wallet so the bot can resume and retry without re-fetching everything. |
-| **Retry logic** | Copies that fail (e.g. network) are retried up to `RETRY_LIMIT` times so temporary errors don’t drop trades. |
-| **Order age filter** | Ignores trades older than `TOO_OLD_TIMESTAMP` (hours) so you only copy recent, relevant orders. |
-| **Official CLOB client** | Uses `@polymarket/clob-client` and your private key to sign and submit orders correctly. |
-| **Configurable timing** | `FETCH_INTERVAL` (seconds) controls how often the monitor runs; tune for speed vs API load. |
-
----
-
-## How It Works
-
-1. **Start the bot** — It connects to MongoDB and the Polymarket CLOB using your `.env`.
-2. **Monitor** — On a loop, it fetches the target wallet’s activity and updates MongoDB.
-3. **Execute** — In parallel, it reads pending trades from MongoDB and places matching orders on your wallet (with balance and position checks).
-4. **Retry** — Failed executions are retried according to `RETRY_LIMIT`.
-
-You need: the **target wallet address** to copy, **your Polymarket wallet** (and its private key), **MongoDB**, and a **Polygon RPC** URL. Your wallet must hold USDC on Polygon to place orders.
-
----
-
-## Prerequisites
-
-- **Node.js** 18+ and npm
-- **MongoDB** — Local or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-- **Polygon RPC** — e.g. [Infura](https://infura.io), [Alchemy](https://www.alchemy.com)
-- **Wallets** — The Polymarket wallet you want to copy, and your own wallet (with USDC on Polygon) that will execute copies
-
----
-
-## Installation
-
-1. **Clone and enter the project**
-
-   ```bash
-   git clone https://github.com/OnChainMee/polymarket-copy-trading-bot.git
-   cd polymarket-copy-trading-bot
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Create a `.env` file** in the project root (see [Configuration](#configuration)).
-
-4. **Build and run**
-
-   ```bash
-   npm run build
-   npm start
-   ```
-
-**Development (with ts-node):**
+### Installation
 
 ```bash
-npm run dev
+# Clone repository
+git clone https://github.com/OnChainMee/polymarket-copy-trading-bot.git
+cd polymarket-copy-trading-bot
+
+# Install dependencies
+npm install
+
+# Run interactive setup wizard
+npm run setup
+
+# Build and start
+npm run build
+npm run health-check  # Verify configuration
+npm start             # Start trading
 ```
 
----
+**📖 For detailed setup instructions, see [Getting Started Guide](./docs/GETTING_STARTED.md)**
+
+## Features
+
+- **Multi-Trader Support** - Track and copy trades from multiple traders simultaneously
+- **Smart Position Sizing** - Automatically adjusts trade sizes based on your capital
+- **Tiered Multipliers** - Apply different multipliers based on trade size
+- **Position Tracking** - Accurately tracks purchases and sells even after balance changes
+- **Trade Aggregation** - Combines multiple small trades into larger executable orders
+- **Real-time Execution** - Monitors trades every second and executes instantly
+- **MongoDB Integration** - Persistent storage of all trades and positions
+- **Price Protection** - Built-in slippage checks to avoid unfavorable fills
+
+### Monitoring Method
+
+The bot currently uses the **Polymarket Data API** to monitor trader activity and detect new positions. The monitoring system polls trader positions at configurable intervals (default: 1 second) to ensure timely trade detection and execution.
 
 ## Configuration
 
-Create a `.env` file in the project root. Do **not** commit `.env` or share keys.
+### Essential Variables
 
-| Variable | Required | Description | Example / default |
-|----------|----------|-------------|-------------------|
-| `USER_ADDRESS` | Yes | Polymarket wallet address to **copy** | `0x...` |
-| `PROXY_WALLET` | Yes | **Your** Polymarket wallet (executes copies) | `0x...` |
-| `PRIVATE_KEY` | Yes | Private key for `PROXY_WALLET` (no `0x` prefix) | — |
-| `CLOB_HTTP_URL` | Yes | Polymarket CLOB API base URL | `https://clob.polymarket.com/` |
-| `CLOB_WS_URL` | Yes | Polymarket CLOB WebSocket URL | `wss://ws-subscriptions-clob.polymarket.com/ws` |
-| `MONGO_URI` | Yes | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/dbname` |
-| `RPC_URL` | Yes | Polygon mainnet RPC URL | `https://polygon-mainnet.g.alchemy.com/v2/YOUR_KEY` |
-| `USDC_CONTRACT_ADDRESS` | Yes | USDC on Polygon | `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174` |
-| `FETCH_INTERVAL` | No | Poll interval in **seconds** | `1` |
-| `TOO_OLD_TIMESTAMP` | No | Ignore orders older than this (**hours**) | `24` |
-| `RETRY_LIMIT` | No | Max retries per execution | `3` |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `USER_ADDRESSES` | Traders to copy (comma-separated) | `'0xABC..., 0xDEF...'` |
+| `PROXY_WALLET` | Your Polymarket wallet address | `'0x123...'` |
+| `PRIVATE_KEY` | Wallet private key | `'abc123...'` |
+| `MONGO_URI` | MongoDB connection string | `'mongodb+srv://...'` |
+| `RPC_URL` | Polygon RPC endpoint | `'https://polygon...'` |
+| `TRADE_MULTIPLIER` | Position size multiplier (default: 1.0) | `2.0` |
+| `FETCH_INTERVAL` | Check interval in seconds (default: 1) | `1` |
 
-**Example `.env`** (replace placeholders; never commit real keys):
+### Finding Traders
 
-```env
-USER_ADDRESS=0xTargetTraderAddress
-PROXY_WALLET=0xYourPolymarketWallet
-PRIVATE_KEY=your_private_key_no_0x_prefix
+1. Visit [Polymarket Leaderboard](https://polymarket.com/leaderboard)
+2. Look for traders with positive P&L, win rate >55%, and active trading history
+3. Verify detailed stats on [Predictfolio](https://predictfolio.com)
+4. Add wallet addresses to `USER_ADDRESSES`
 
-CLOB_HTTP_URL=https://clob.polymarket.com/
-CLOB_WS_URL=wss://ws-subscriptions-clob.polymarket.com/ws
+**📖 For complete configuration guide, see [Quick Start](./docs/QUICK_START.md)**
 
-MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/your_db
-RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
-USDC_CONTRACT_ADDRESS=0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+## Documentation
 
-FETCH_INTERVAL=1
-TOO_OLD_TIMESTAMP=24
-RETRY_LIMIT=3
-```
-
----
-
-## Usage
-
-- **Production:** `npm run build` then `npm start`
-- **Development:** `npm run dev`
-
-On startup the bot connects to MongoDB, then starts the **trade monitor** (target wallet) and **trade executor** (your wallet). Ensure your proxy wallet has USDC on Polygon so orders can be placed.
-
----
-
-## Geographic Restrictions
-
-Polymarket may restrict access from some regions. If you hit IP-based blocks:
-
-- Run the bot from a supported region (e.g. VPS in the Netherlands or another allowed location).
-- Use a low-latency provider close to Polymarket’s infrastructure if you care about execution speed.
-
-This project does not endorse any specific VPS provider. Choose a host that meets your legal and performance needs.
-
----
-
-## Contributing
-
-Contributions are welcome. Open an issue to discuss larger changes, then submit a pull request. If you find the project useful, consider giving it a star.
+### Getting Started
+- **[🚀 Getting Started Guide](./docs/GETTING_STARTED.md)** - Complete beginner's guide
+- **[⚡ Quick Start](./docs/QUICK_START.md)** - Fast setup for experienced users
 
 ## License
 
-ISC — see [package.json](package.json) for details.
+ISC License - See [LICENSE](LICENSE) file for details.
 
-## Contact
+## Acknowledgments
 
-For questions or updates: [Telegram](https://t.me/OnChainMee).
+- Built on [Polymarket CLOB Client](https://github.com/Polymarket/clob-client)
+- Uses [Predictfolio](https://predictfolio.com) for trader analytics
+- Powered by Polygon network
+
+---
+
+## Advanced version
+
+**🚀 Version 2 Available:** An advanced version with **RTDS (Real-Time Data Stream)** monitoring is now available as a private repository. <br />
+Version 2 features the fastest trade detection method with near-instantaneous trade replication, lower latency, and reduced API load. Copy trading works excellently in the advanced version.
+This version has more advanced features than version 1 and is a truly profitable tool.
+## 🎯 Key Differentiators
+
+✅ **Real-time WebSocket monitoring (RTDS)**  
+✅ **Only bot with integrated TP/SL automation**  
+✅ **Advanced position sizing strategies**  
+✅ **Trade aggregation technology**  
+✅ **Auto-claim functionality**  
+✅ **Comprehensive risk management**  
+✅ **Enterprise-grade reliability**  
+✅ **Finding the Best Traders**  
+
+<img width="1529" height="618" alt="download (1)" src="https://github.com/user-attachments/assets/4891a54a-29be-4193-8034-42fe460ba84d" />
+
+
+
+https://github.com/user-attachments/assets/5cf88946-4a1a-4168-a41d-920ade3370d4
+
+
+There are several versions, including **TypeScript**, **Python**, and **Rust**.
+## Trading tool
+
+I've also developed a trading bot for Polymarket built with **Rust**.
+
+## Recommend VPS
+
+Vps: [@TradingVps](https://app.tradingvps.io/aff.php?aff=57)
+<img width="890" height="595" alt="image (4)" src="https://github.com/user-attachments/assets/fb311b59-05a6-477a-a8f0-5e8291acf1eb" />
+
+**Disclaimer:** This software is for educational purposes only. Trading involves risk of loss. The developers are not responsible for any financial losses incurred while using this bot.
+
+**Support:** For questions or issues, contact via Telegram: [@OnChainMee](https://t.me/OnChainMee) | Twitter: [@OnChainMee](https://x.com/OnChainMee)

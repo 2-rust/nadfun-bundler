@@ -25,6 +25,7 @@ export interface UserActivityInterface {
     profileImageOptimized: string;
     bot: boolean;
     botExcutedTime: number;
+    myBoughtSize?: number; // Tracks actual tokens we bought
 }
 
 export interface UserPositionInterface {

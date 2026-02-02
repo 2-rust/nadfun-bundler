@@ -62,6 +62,7 @@ const activitySchema = new Schema({
     profileImageOptimized: { type: String, required: false },
     bot: { type: Boolean, required: false },
     botExcutedTime: { type: Number, required: false },
+    myBoughtSize: { type: Number, required: false }, // Tracks actual tokens we bought
 });
 
 const getUserPositionModel = (walletAddress: string) => {
@@ -74,4 +75,4 @@ const getUserActivityModel = (walletAddress: string) => {
     return mongoose.model(collectionName, activitySchema, collectionName);
 };
 
-export { getUserPositionModel, getUserActivityModel };
+export { getUserActivityModel, getUserPositionModel };
